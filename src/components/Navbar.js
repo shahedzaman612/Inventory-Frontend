@@ -3,6 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 
+// ✅ Logo from public folder
+const logo = "/logo192.png";
+
 const Navigation = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -15,9 +18,18 @@ const Navigation = () => {
   return (
     <Navbar bg="dark" variant="dark" expand="lg">
       <Container>
-        <Navbar.Brand as={Link} to="/">
-          MY INVENTORIES
+        {/* ✅ Logo + Brand name */}
+        <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
+          <img
+            src={logo}
+            alt="Logo"
+            width="40"
+            height="40"
+            className="d-inline-block align-top me-2"
+          />
+          MY INVENTORIES BD
         </Navbar.Brand>
+
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">

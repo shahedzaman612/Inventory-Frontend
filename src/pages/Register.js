@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const Register = () => {
   const [formData, setFormData] = useState({
     username: "",
@@ -24,10 +26,7 @@ const Register = () => {
     }
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/register",
-        formData
-      );
+      const res = await axios.post(`${API_URL}/api/auth/register`, formData);
       setSuccess(res.data.message);
       setFormData({ username: "", email: "", password: "" });
     } catch (err) {
@@ -40,7 +39,12 @@ const Register = () => {
       <h2>Register</h2>
 
       {error && <div className="alert alert-danger">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {success && (
+        <div className="alert alert-success">
+          {success} <br />
+          Please check your email to verify your account before logging in.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
@@ -79,7 +83,7 @@ const Register = () => {
           />
         </div>
 
-        <button type="submit" className="btn btn-primary">
+        <button type="submit" className="btn btn-primary" disabled={!!success}>
           Register
         </button>
         <a href="/login" className="btn btn-link">

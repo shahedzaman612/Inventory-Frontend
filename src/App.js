@@ -7,7 +7,8 @@ import InventoryDetail from "./pages/InventoryDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
-
+import ResetPassword from "./components/ResetPassword";
+import ForgotPassword from "./components/ForgotPassword";
 function App() {
   return (
     <AuthProvider>
@@ -34,6 +35,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
           <Route path="*" element={<Login />} />
         </Routes>

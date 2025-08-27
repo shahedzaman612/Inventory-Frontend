@@ -14,18 +14,22 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     try {
       await login(email, password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+      const msg = err.response?.data?.message || "Login failed";
+      setError(msg);
     }
   };
 
   return (
     <Container className="mt-5" style={{ maxWidth: "400px" }}>
       <h2 className="mb-4 text-center">Login</h2>
+
       {error && <Alert variant="danger">{error}</Alert>}
+
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-3" controlId="formEmail">
           <Form.Label>Email</Form.Label>
@@ -49,9 +53,14 @@ const Login = () => {
           />
         </Form.Group>
 
-        <Button variant="primary" type="submit" className="w-100">
+        <Button variant="primary" type="submit" className="w-100 mb-2">
           Login
         </Button>
+
+        <div className="text-center mt-2">
+          <Link to="/forgot-password">Forgot Password?</Link>
+        </div>
+
         <p className="mt-3 text-center">
           Don't have an account? <Link to="/register">Register</Link>
         </p>
