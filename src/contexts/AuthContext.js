@@ -23,10 +23,10 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (username, email, password) => {
     const res = await api.post("/auth/register", { username, email, password });
-    setUser(res.data.user);
-    setToken(res.data.token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
-    localStorage.setItem("token", res.data.token);
+    alert(
+      "✅ Registration successful! Please check your email to verify your account."
+    );
+
     return res.data.user;
   };
 
