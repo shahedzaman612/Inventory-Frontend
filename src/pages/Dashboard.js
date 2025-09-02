@@ -1,6 +1,5 @@
 import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-
 import {
   Container,
   Row,
@@ -22,32 +21,41 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // ---------------- Create Inventory ----------------
+  // ---------------- Modals ----------------
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddItemModal, setShowAddItemModal] = useState(false);
+
+  const [createError, setCreateError] = useState("");
+  const [editError, setEditError] = useState("");
+  const [addItemError, setAddItemError] = useState("");
+
+  // ---------------- Inventory States ----------------
   const [modalInventory, setModalInventory] = useState({
     title: "",
     description: "",
     category: "",
+    customFields: { stringFields: [], numberFields: [], booleanFields: [], dropdownFields: [] },
   });
-  const [createError, setCreateError] = useState("");
-
-  // ---------------- Edit Inventory ----------------
-  const [showEditModal, setShowEditModal] = useState(false);
   const [editInventory, setEditInventory] = useState({
     _id: "",
     title: "",
     description: "",
     category: "",
+    customFields: { stringFields: [], numberFields: [], booleanFields: [], dropdownFields: [] },
   });
-  const [editError, setEditError] = useState("");
 
-  // ---------------- Add Item ----------------
-  const [showAddItemModal, setShowAddItemModal] = useState(false);
+  // ---------------- Custom Field Temp States ----------------
+  const [tempString, setTempString] = useState("");
+  const [tempNumber, setTempNumber] = useState("");
+  const [tempBoolean, setTempBoolean] = useState("");
+  const [tempDropdown, setTempDropdown] = useState("");
+
+  // ---------------- Add Item States ----------------
   const [addItemInventoryId, setAddItemInventoryId] = useState("");
-  const [newItem, setNewItem] = useState({ name: "", quantity: 0 });
-  const [addItemError, setAddItemError] = useState("");
+  const [newItem, setNewItem] = useState({ name: "", quantity: 0, itemId: "" });
 
-  // Fetch inventories & stats
+  // ---------------- Fetch inventories & stats ----------------
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -63,13 +71,35 @@ const Dashboard = () => {
     fetchData();
   }, [user.id]);
 
-  // ---------------- Create Inventory Handlers ----------------
-  const handleCreateModalShow = () => setShowCreateModal(true);
-  const handleCreateModalClose = () => {
-    setShowCreateModal(false);
-    setModalInventory({ title: "", description: "", category: "" });
-    setCreateError("");
+  // ---------------- Helper: Add Custom Field ----------------
+  const addField = (inventory, setInventory, type, value, resetValue) => {
+    if (value === "" || value === null || value === undefined) return;
+    setInventory({
+      ...inventory,
+      customFields: {
+        ...inventory.customFields,
+        [type]: [...inventory.customFields[type], value],
+      },
+    });
+    resetValue("");
   };
+
+  // ---------------- Create Inventory Handlers ----------------
+  const handleCreateModalShow = () => {
+    setShowCreateModal(true);
+    setModalInventory({
+      title: "",
+      description: "",
+      category: "",
+      customFields: { stringFields: [], numberFields: [], booleanFields: [], dropdownFields: [] },
+    });
+    setTempString("");
+    setTempNumber("");
+    setTempBoolean("");
+    setTempDropdown("");
+  };
+  const handleCreateModalClose = () => setShowCreateModal(false);
+
   const handleCreateInventory = async () => {
     setCreateError("");
     if (!modalInventory.title) {
@@ -81,9 +111,7 @@ const Dashboard = () => {
       setInventories([res.data, ...inventories]);
       handleCreateModalClose();
     } catch (err) {
-      setCreateError(
-        err.response?.data?.message || "Failed to create inventory"
-      );
+      setCreateError(err.response?.data?.message || "Failed to create inventory");
     }
   };
 
@@ -94,15 +122,21 @@ const Dashboard = () => {
       title: inventory.title,
       description: inventory.description,
       category: inventory.category,
+      customFields: {
+        stringFields: inventory.customFields?.stringFields || [],
+        numberFields: inventory.customFields?.numberFields || [],
+        booleanFields: inventory.customFields?.booleanFields || [],
+        dropdownFields: inventory.customFields?.dropdownFields || [],
+      },
     });
-    setEditError("");
+    setTempString("");
+    setTempNumber("");
+    setTempBoolean("");
+    setTempDropdown("");
     setShowEditModal(true);
   };
-  const handleEditClose = () => {
-    setShowEditModal(false);
-    setEditInventory({ _id: "", title: "", description: "", category: "" });
-    setEditError("");
-  };
+  const handleEditClose = () => setShowEditModal(false);
+
   const handleEditSubmit = async () => {
     setEditError("");
     if (!editInventory.title) {
@@ -110,11 +144,7 @@ const Dashboard = () => {
       return;
     }
     try {
-      const res = await api.put(`/inventories/${editInventory._id}`, {
-        title: editInventory.title,
-        description: editInventory.description,
-        category: editInventory.category,
-      });
+      const res = await api.put(`/inventories/${editInventory._id}`, editInventory);
       setInventories(
         inventories.map((inv) => (inv._id === res.data._id ? res.data : inv))
       );
@@ -126,8 +156,7 @@ const Dashboard = () => {
 
   // ---------------- Delete Inventory ----------------
   const handleDeleteInventory = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this inventory?"))
-      return;
+    if (!window.confirm("Are you sure you want to delete this inventory?")) return;
     try {
       await api.delete(`/inventories/${id}`);
       setInventories(inventories.filter((inv) => inv._id !== id));
@@ -139,11 +168,11 @@ const Dashboard = () => {
   // ---------------- Add Item Handlers ----------------
   const handleAddItemShow = (inventoryId) => {
     setAddItemInventoryId(inventoryId);
-    setNewItem({ name: "", quantity: 0 });
-    setAddItemError("");
+    setNewItem({ name: "", quantity: 0, itemId: "" });
     setShowAddItemModal(true);
   };
   const handleAddItemClose = () => setShowAddItemModal(false);
+
   const handleAddItemSubmit = async () => {
     setAddItemError("");
     if (!newItem.name || newItem.quantity <= 0) {
@@ -151,11 +180,8 @@ const Dashboard = () => {
       return;
     }
     try {
-      await api.post(`/inventories/${addItemInventoryId}/items`, {
-        itemId: Date.now().toString(),
-        name: newItem.name,
-        quantity: newItem.quantity,
-      });
+      if (!newItem.itemId) newItem.itemId = Date.now().toString();
+      await api.post(`/inventories/${addItemInventoryId}/items`, newItem);
       alert("Item added successfully");
       handleAddItemClose();
     } catch (err) {
@@ -178,25 +204,27 @@ const Dashboard = () => {
         </Col>
       </Row>
 
-       <Row className="mb-4">
-              <Col md={6}>
-                <Card bg="primary" text="white" className="mb-3">
-                  <Card.Body>
-                    <Card.Title>Total Inventories</Card.Title>
-                    <h3>{stats.inventories}</h3>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={6}>
-                <Card bg="success" text="white" className="mb-3">
-                  <Card.Body>
-                    <Card.Title>Total Items</Card.Title>
-                  <h3>{stats.inventories}</h3>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
+      {/* Stats */}
+      <Row className="mb-4">
+        <Col md={6}>
+          <Card bg="primary" text="white" className="mb-3">
+            <Card.Body>
+              <Card.Title>Total Inventories</Card.Title>
+              <h3>{stats.inventories}</h3>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={6}>
+          <Card bg="success" text="white" className="mb-3">
+            <Card.Body>
+              <Card.Title>Total Items</Card.Title>
+              <h3>{stats.items}</h3>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
+      {/* Create Inventory Button */}
       <Row className="mb-3">
         <Col className="text-end">
           <Button variant="primary" onClick={handleCreateModalShow}>
@@ -205,6 +233,7 @@ const Dashboard = () => {
         </Col>
       </Row>
 
+      {/* Inventories Table */}
       <Row>
         {inventories.length === 0 ? (
           <p>No inventories found.</p>
@@ -221,17 +250,17 @@ const Dashboard = () => {
             </thead>
             <tbody>
               {inventories.map((inv) => (
-                <tr key={inv?._id}>
-                  <td>{inv?.title}</td>
-                  <td>{inv?.category}</td>
-                  <td>{inv?.description}</td>
-                  <td>{new Date(inv?.createdAt).toLocaleDateString()}</td>
+                <tr key={inv._id}>
+                  <td>{inv.title}</td>
+                  <td>{inv.category}</td>
+                  <td>{inv.description}</td>
+                  <td>{new Date(inv.createdAt).toLocaleDateString()}</td>
                   <td>
                     <Button
                       variant="success"
                       size="sm"
                       className="me-2"
-                      onClick={() => handleAddItemShow(inv?._id)}
+                      onClick={() => handleAddItemShow(inv._id)}
                     >
                       Add Item
                     </Button>
@@ -243,9 +272,7 @@ const Dashboard = () => {
                     >
                       View Details
                     </Button>
-
-                    {(inv?.userId?._id === user.id ||
-                      user.role === "admin") && (
+                    {(inv.userId?._id === user.id || user.role === "admin") && (
                       <>
                         <Button
                           variant="warning"
@@ -258,7 +285,7 @@ const Dashboard = () => {
                         <Button
                           variant="danger"
                           size="sm"
-                          onClick={() => handleDeleteInventory(inv?._id)}
+                          onClick={() => handleDeleteInventory(inv._id)}
                         >
                           Delete
                         </Button>
@@ -272,7 +299,7 @@ const Dashboard = () => {
         )}
       </Row>
 
-      {/* Create Inventory Modal */}
+      {/* ---------------- Create Inventory Modal ---------------- */}
       <Modal show={showCreateModal} onHide={handleCreateModalClose}>
         <Modal.Header closeButton>
           <Modal.Title>Create Inventory</Modal.Title>
@@ -286,26 +313,22 @@ const Dashboard = () => {
                 type="text"
                 value={modalInventory.title}
                 onChange={(e) =>
-                  setModalInventory({
-                    ...modalInventory,
-                    title: e.target.value,
-                  })
+                  setModalInventory({ ...modalInventory, title: e.target.value })
                 }
               />
             </Form.Group>
+
             <Form.Group className="mb-3">
               <Form.Label>Category</Form.Label>
               <Form.Control
                 type="text"
                 value={modalInventory.category}
                 onChange={(e) =>
-                  setModalInventory({
-                    ...modalInventory,
-                    category: e.target.value,
-                  })
+                  setModalInventory({ ...modalInventory, category: e.target.value })
                 }
               />
             </Form.Group>
+
             <Form.Group className="mb-3">
               <Form.Label>Description</Form.Label>
               <Form.Control
@@ -313,12 +336,112 @@ const Dashboard = () => {
                 rows={3}
                 value={modalInventory.description}
                 onChange={(e) =>
-                  setModalInventory({
-                    ...modalInventory,
-                    description: e.target.value,
-                  })
+                  setModalInventory({ ...modalInventory, description: e.target.value })
                 }
               />
+            </Form.Group>
+
+            <hr />
+            <h6>Custom Fields</h6>
+
+            {/* String Fields */}
+            <Form.Group className="mb-3">
+              <Form.Label>String Field</Form.Label>
+              <div className="d-flex">
+                <Form.Control
+                  type="text"
+                  value={tempString}
+                  onChange={(e) => setTempString(e.target.value)}
+                />
+                <Button
+                  className="ms-2"
+                  onClick={() =>
+                    addField(modalInventory, setModalInventory, "stringFields", tempString, setTempString)
+                  }
+                >
+                  Add
+                </Button>
+              </div>
+              <ul>
+                {modalInventory.customFields.stringFields.map((f, i) => (
+                  <li key={i}>{f}</li>
+                ))}
+              </ul>
+            </Form.Group>
+
+            {/* Number Fields */}
+            <Form.Group className="mb-3">
+              <Form.Label>Number Field</Form.Label>
+              <div className="d-flex">
+                <Form.Control
+                  type="number"
+                  value={tempNumber}
+                  onChange={(e) => setTempNumber(e.target.value)}
+                />
+                <Button
+                  className="ms-2"
+                  onClick={() =>
+                    addField(modalInventory, setModalInventory, "numberFields", Number(tempNumber), setTempNumber)
+                  }
+                >
+                  Add
+                </Button>
+              </div>
+              <ul>
+                {modalInventory.customFields.numberFields.map((f, i) => (
+                  <li key={i}>{f}</li>
+                ))}
+              </ul>
+            </Form.Group>
+
+            {/* Boolean Fields */}
+            <Form.Group className="mb-3">
+              <Form.Label>Boolean Field</Form.Label>
+              <div className="d-flex">
+                <Form.Select value={tempBoolean} onChange={(e) => setTempBoolean(e.target.value)}>
+                  <option value="">Select</option>
+                  <option value="true">True</option>
+                  <option value="false">False</option>
+                </Form.Select>
+                <Button
+                  className="ms-2"
+                  onClick={() =>
+                    addField(modalInventory, setModalInventory, "booleanFields", tempBoolean === "true", setTempBoolean)
+                  }
+                >
+                  Add
+                </Button>
+              </div>
+              <ul>
+                {modalInventory.customFields.booleanFields.map((f, i) => (
+                  <li key={i}>{f.toString()}</li>
+                ))}
+              </ul>
+            </Form.Group>
+
+            {/* Dropdown Fields */}
+            <Form.Group className="mb-3">
+              <Form.Label>Dropdown Field</Form.Label>
+              <div className="d-flex">
+                <Form.Control
+                  type="text"
+                  value={tempDropdown}
+                  onChange={(e) => setTempDropdown(e.target.value)}
+                />
+                <Button
+                  className="ms-2"
+                  onClick={() =>
+                    addField(modalInventory, setModalInventory, "dropdownFields", tempDropdown, setTempDropdown)
+                  }
+                >
+                  Add
+                </Button>
+              </div>
+              <ul>
+                {modalInventory.customFields.dropdownFields.map((f, i) => (
+                  <li key={i}>{f}</li>
+                ))}
+              </ul>
             </Form.Group>
           </Form>
         </Modal.Body>
@@ -332,7 +455,7 @@ const Dashboard = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Edit Inventory Modal */}
+      {/* ---------------- Edit Inventory Modal ---------------- */}
       <Modal show={showEditModal} onHide={handleEditClose}>
         <Modal.Header closeButton>
           <Modal.Title>Edit Inventory</Modal.Title>
@@ -350,19 +473,18 @@ const Dashboard = () => {
                 }
               />
             </Form.Group>
+
             <Form.Group className="mb-3">
               <Form.Label>Category</Form.Label>
               <Form.Control
                 type="text"
                 value={editInventory.category}
                 onChange={(e) =>
-                  setEditInventory({
-                    ...editInventory,
-                    category: e.target.value,
-                  })
+                  setEditInventory({ ...editInventory, category: e.target.value })
                 }
               />
             </Form.Group>
+
             <Form.Group className="mb-3">
               <Form.Label>Description</Form.Label>
               <Form.Control
@@ -370,12 +492,112 @@ const Dashboard = () => {
                 rows={3}
                 value={editInventory.description}
                 onChange={(e) =>
-                  setEditInventory({
-                    ...editInventory,
-                    description: e.target.value,
-                  })
+                  setEditInventory({ ...editInventory, description: e.target.value })
                 }
               />
+            </Form.Group>
+
+            <hr />
+            <h6>Custom Fields</h6>
+
+            {/* String Fields */}
+            <Form.Group className="mb-3">
+              <Form.Label>String Field</Form.Label>
+              <div className="d-flex">
+                <Form.Control
+                  type="text"
+                  value={tempString}
+                  onChange={(e) => setTempString(e.target.value)}
+                />
+                <Button
+                  className="ms-2"
+                  onClick={() =>
+                    addField(editInventory, setEditInventory, "stringFields", tempString, setTempString)
+                  }
+                >
+                  Add
+                </Button>
+              </div>
+              <ul>
+                {editInventory.customFields.stringFields.map((f, i) => (
+                  <li key={i}>{f}</li>
+                ))}
+              </ul>
+            </Form.Group>
+
+            {/* Number Fields */}
+            <Form.Group className="mb-3">
+              <Form.Label>Number Field</Form.Label>
+              <div className="d-flex">
+                <Form.Control
+                  type="number"
+                  value={tempNumber}
+                  onChange={(e) => setTempNumber(e.target.value)}
+                />
+                <Button
+                  className="ms-2"
+                  onClick={() =>
+                    addField(editInventory, setEditInventory, "numberFields", Number(tempNumber), setTempNumber)
+                  }
+                >
+                  Add
+                </Button>
+              </div>
+              <ul>
+                {editInventory.customFields.numberFields.map((f, i) => (
+                  <li key={i}>{f}</li>
+                ))}
+              </ul>
+            </Form.Group>
+
+            {/* Boolean Fields */}
+            <Form.Group className="mb-3">
+              <Form.Label>Boolean Field</Form.Label>
+              <div className="d-flex">
+                <Form.Select value={tempBoolean} onChange={(e) => setTempBoolean(e.target.value)}>
+                  <option value="">Select</option>
+                  <option value="true">True</option>
+                  <option value="false">False</option>
+                </Form.Select>
+                <Button
+                  className="ms-2"
+                  onClick={() =>
+                    addField(editInventory, setEditInventory, "booleanFields", tempBoolean === "true", setTempBoolean)
+                  }
+                >
+                  Add
+                </Button>
+              </div>
+              <ul>
+                {editInventory.customFields.booleanFields.map((f, i) => (
+                  <li key={i}>{f.toString()}</li>
+                ))}
+              </ul>
+            </Form.Group>
+
+            {/* Dropdown Fields */}
+            <Form.Group className="mb-3">
+              <Form.Label>Dropdown Field</Form.Label>
+              <div className="d-flex">
+                <Form.Control
+                  type="text"
+                  value={tempDropdown}
+                  onChange={(e) => setTempDropdown(e.target.value)}
+                />
+                <Button
+                  className="ms-2"
+                  onClick={() =>
+                    addField(editInventory, setEditInventory, "dropdownFields", tempDropdown, setTempDropdown)
+                  }
+                >
+                  Add
+                </Button>
+              </div>
+              <ul>
+                {editInventory.customFields.dropdownFields.map((f, i) => (
+                  <li key={i}>{f}</li>
+                ))}
+              </ul>
             </Form.Group>
           </Form>
         </Modal.Body>
@@ -384,12 +606,12 @@ const Dashboard = () => {
             Cancel
           </Button>
           <Button variant="primary" onClick={handleEditSubmit}>
-            Update
+            Save Changes
           </Button>
         </Modal.Footer>
       </Modal>
 
-      {/* Add Item Modal */}
+      {/* ---------------- Add Item Modal ---------------- */}
       <Modal show={showAddItemModal} onHide={handleAddItemClose}>
         <Modal.Header closeButton>
           <Modal.Title>Add Item</Modal.Title>
@@ -398,24 +620,11 @@ const Dashboard = () => {
           {addItemError && <Alert variant="danger">{addItemError}</Alert>}
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Item ID</Form.Label>
-              <Form.Control
-                type="text"
-                value={newItem.itemId}
-                onChange={(e) =>
-                  setNewItem({ ...newItem, itemId: e.target.value })
-                }
-                placeholder="Enter unique Item ID or leave blank to auto-generate"
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
               <Form.Label>Item Name</Form.Label>
               <Form.Control
                 type="text"
                 value={newItem.name}
-                onChange={(e) =>
-                  setNewItem({ ...newItem, name: e.target.value })
-                }
+                onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
               />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -423,12 +632,7 @@ const Dashboard = () => {
               <Form.Control
                 type="number"
                 value={newItem.quantity}
-                onChange={(e) =>
-                  setNewItem({
-                    ...newItem,
-                    quantity: parseInt(e.target.value, 10),
-                  })
-                }
+                onChange={(e) => setNewItem({ ...newItem, quantity: Number(e.target.value) })}
               />
             </Form.Group>
           </Form>
@@ -437,16 +641,7 @@ const Dashboard = () => {
           <Button variant="secondary" onClick={handleAddItemClose}>
             Cancel
           </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              if (!newItem.itemId) {
-                // Auto-generate ID if empty
-                setNewItem({ ...newItem, itemId: Date.now().toString() });
-              }
-              handleAddItemSubmit();
-            }}
-          >
+          <Button variant="primary" onClick={handleAddItemSubmit}>
             Add Item
           </Button>
         </Modal.Footer>

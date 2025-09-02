@@ -27,6 +27,7 @@ const InventoryDetail = () => {
     itemId: "",
     name: "",
     quantity: "",
+    customValues: {}, // NEW: dynamic custom field values
   });
   const [error, setError] = useState("");
   const [editMode, setEditMode] = useState(false);
@@ -34,20 +35,11 @@ const InventoryDetail = () => {
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const invRes = await api.get("/inventories");
-        const inv = invRes.data.find((inv) => inv._id === inventoryId);
-        setInventory(inv);
+        const invRes = await api.get(`/inventories/${inventoryId}`);
+        setInventory(invRes.data);
 
         const itemRes = await api.get(`/inventories/${inventoryId}/items`);
-        // When fetching items
-        setItems(
-          itemRes.data.map((item) => ({
-            _id: item._id, // MongoDB id
-            itemId: item.itemId,
-            name: item.name,
-            quantity: item.quantity,
-          }))
-        );
+        setItems(itemRes.data);
 
         setLoading(false);
       } catch (err) {
@@ -59,7 +51,7 @@ const InventoryDetail = () => {
 
   const handleModalClose = () => {
     setShowModal(false);
-    setModalItem({ itemId: "", name: "", quantity: "" });
+    setModalItem({ itemId: "", name: "", quantity: "", customValues: {} });
     setError("");
     setEditMode(false);
   };
@@ -71,6 +63,7 @@ const InventoryDetail = () => {
         itemId: item.itemId,
         name: item.name,
         quantity: item.quantity,
+        customValues: item.customValues || {},
       });
       setEditMode(true);
     }
@@ -87,7 +80,7 @@ const InventoryDetail = () => {
     try {
       if (editMode) {
         const res = await api.put(
-          `/inventories/${inventoryId}/items/${modalItem._id}`, // use _id
+          `/inventories/${inventoryId}/items/${modalItem._id}`,
           modalItem
         );
         setItems(items.map((i) => (i._id === modalItem._id ? res.data : i)));
@@ -107,7 +100,7 @@ const InventoryDetail = () => {
   const handleDeleteItem = async (_id) => {
     if (!window.confirm("Are you sure you want to delete this item?")) return;
     try {
-      await api.delete(`/inventories/${inventoryId}/items/${_id}`); // use _id
+      await api.delete(`/inventories/${inventoryId}/items/${_id}`);
       setItems(items.filter((i) => i._id !== _id));
     } catch (err) {
       console.error(err);
@@ -116,10 +109,9 @@ const InventoryDetail = () => {
 
   if (loading) return <Container className="mt-5">Loading...</Container>;
 
-  // Only creator or admin can edit/delete items
-  // Only creator or admin can edit/delete items
   const canEditOrDeleteItems =
     inventory?.userId?._id === user.id || user.role === "admin";
+
   return (
     <Container className="mt-4">
       <Row className="mb-3">
@@ -127,12 +119,27 @@ const InventoryDetail = () => {
           <h2>Inventory: {inventory?.title}</h2>
           <p>Category: {inventory?.category}</p>
           <p>Description: {inventory?.description}</p>
+
+          {/* Show custom fields of inventory */}
+          {inventory?.customFields && (
+            <div className="mt-3">
+              <h5>Custom Fields</h5>
+              <ul>
+                {Object.entries(inventory.customFields).map(([type, fields]) =>
+                  fields.map((field, idx) => (
+                    <li key={`${type}-${idx}`}>
+                      {type}: {field}
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+          )}
         </Col>
       </Row>
 
       <Row className="mb-3">
         <Col className="text-end">
-          {/* Everyone can add items */}
           <Button variant="primary" onClick={() => handleModalShow()}>
             + Add Item
           </Button>
@@ -149,6 +156,10 @@ const InventoryDetail = () => {
                 <th>Item ID</th>
                 <th>Name</th>
                 <th>Quantity</th>
+                {inventory?.customFields &&
+                  Object.values(inventory.customFields).flat().map((field) => (
+                    <th key={field}>{field}</th>
+                  ))}
                 {canEditOrDeleteItems && <th>Actions</th>}
               </tr>
             </thead>
@@ -158,6 +169,12 @@ const InventoryDetail = () => {
                   <td>{item.itemId}</td>
                   <td>{item.name}</td>
                   <td>{item.quantity}</td>
+                  {inventory?.customFields &&
+                    Object.values(inventory.customFields).flat().map((field) => (
+                      <td key={field}>
+                        {item.customValues?.[field] || "-"}
+                      </td>
+                    ))}
                   {canEditOrDeleteItems && (
                     <td>
                       <Button
@@ -171,7 +188,7 @@ const InventoryDetail = () => {
                       <Button
                         variant="danger"
                         size="sm"
-                        onClick={() => handleDeleteItem(item._id)} // use _id
+                        onClick={() => handleDeleteItem(item._id)}
                       >
                         Delete
                       </Button>
@@ -200,8 +217,6 @@ const InventoryDetail = () => {
                 onChange={(e) =>
                   setModalItem({ ...modalItem, itemId: e.target.value })
                 }
-                placeholder="Enter unique Item ID or leave blank to auto-generate"
-                disabled={editMode && !canEditOrDeleteItems}
               />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -212,7 +227,6 @@ const InventoryDetail = () => {
                 onChange={(e) =>
                   setModalItem({ ...modalItem, name: e.target.value })
                 }
-                disabled={editMode && !canEditOrDeleteItems}
               />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -223,20 +237,38 @@ const InventoryDetail = () => {
                 onChange={(e) =>
                   setModalItem({ ...modalItem, quantity: e.target.value })
                 }
-                disabled={editMode && !canEditOrDeleteItems}
               />
             </Form.Group>
+
+            {/* Render custom fields as inputs */}
+            {inventory?.customFields &&
+              Object.values(inventory.customFields).flat().map((field) => (
+                <Form.Group className="mb-3" key={field}>
+                  <Form.Label>{field}</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={modalItem.customValues?.[field] || ""}
+                    onChange={(e) =>
+                      setModalItem({
+                        ...modalItem,
+                        customValues: {
+                          ...modalItem.customValues,
+                          [field]: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </Form.Group>
+              ))}
           </Form>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleModalClose}>
             Cancel
           </Button>
-          {(!editMode || canEditOrDeleteItems) && (
-            <Button variant="primary" onClick={handleSaveItem}>
-              {editMode ? "Update" : "Add"}
-            </Button>
-          )}
+          <Button variant="primary" onClick={handleSaveItem}>
+            {editMode ? "Update" : "Add"}
+          </Button>
         </Modal.Footer>
       </Modal>
     </Container>
