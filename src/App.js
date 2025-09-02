@@ -10,6 +10,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ResetPassword from "./components/ResetPassword";
 import ForgotPassword from "./components/ForgotPassword";
 import VerifyEmail from "./pages/VerifyEmail";
+import ProfilePage from "./components/ProfilePage";
+
+
 function App() {
   return (
     <AuthProvider>
@@ -28,6 +31,12 @@ function App() {
             }
           />
 
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          } />
+
           <Route
             path="/inventory/:inventoryId"
             element={
@@ -40,7 +49,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
-          <Route path="*" element={<Login />} />
+          <Route path="*" element={<Dashboard />} />
         </Routes>
       </Router>
     </AuthProvider>

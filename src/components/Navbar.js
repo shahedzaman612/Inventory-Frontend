@@ -1,4 +1,4 @@
-import { Navbar, Container, Nav, Button } from "react-bootstrap";
+import { Navbar, Container, Nav, Button } from "react-bootstrap"; 
 import { Link, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../contexts/AuthContext";
@@ -37,6 +37,9 @@ const Navigation = () => {
               <>
                 <Nav.Link as={Link} to="/dashboard">
                   Dashboard
+                </Nav.Link>
+                <Nav.Link as={Link} to="/profile">
+                  Profile
                 </Nav.Link>
               </>
             )}

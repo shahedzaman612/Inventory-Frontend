@@ -178,24 +178,24 @@ const Dashboard = () => {
         </Col>
       </Row>
 
-      <Row className="mb-4">
-        <Col md={6}>
-          <Card className="text-center">
-            <Card.Body>
-              <Card.Title>Total Inventories</Card.Title>
-              <h3>{stats.inventories}</h3>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={6}>
-          <Card className="text-center">
-            <Card.Body>
-              <Card.Title>Total Items</Card.Title>
-              <h3>{stats.items}</h3>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+       <Row className="mb-4">
+              <Col md={6}>
+                <Card bg="primary" text="white" className="mb-3">
+                  <Card.Body>
+                    <Card.Title>Total Inventories</Card.Title>
+                    <h3>{stats.inventories}</h3>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col md={6}>
+                <Card bg="success" text="white" className="mb-3">
+                  <Card.Body>
+                    <Card.Title>Total Items</Card.Title>
+                  <h3>{stats.inventories}</h3>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
 
       <Row className="mb-3">
         <Col className="text-end">
