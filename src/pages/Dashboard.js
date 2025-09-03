@@ -172,30 +172,6 @@ const Dashboard = () => {
     }
   };
 
-  // ---------------- Add Item Handlers ----------------
-  const handleAddItemShow = (inventoryId) => {
-    setAddItemInventoryId(inventoryId);
-    setNewItem({ name: "", quantity: 0, itemId: "" });
-    setShowAddItemModal(true);
-  };
-  const handleAddItemClose = () => setShowAddItemModal(false);
-
-  const handleAddItemSubmit = async () => {
-    setAddItemError("");
-    if (!newItem.name || newItem.quantity <= 0) {
-      setAddItemError("Item name and positive quantity are required");
-      return;
-    }
-    try {
-      if (!newItem.itemId) newItem.itemId = Date.now().toString();
-      await api.post(`/inventories/${addItemInventoryId}/items`, newItem);
-      alert("Item added successfully");
-      handleAddItemClose();
-    } catch (err) {
-      setAddItemError(err.response?.data?.message || "Failed to add item");
-    }
-  };
-
   if (loading) return <Container className="mt-5">Loading...</Container>;
 
   return (
