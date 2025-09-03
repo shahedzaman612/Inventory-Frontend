@@ -29,6 +29,13 @@ const Dashboard = () => {
   const [createError, setCreateError] = useState("");
   const [editError, setEditError] = useState("");
   const [addItemError, setAddItemError] = useState("");
+  const [contextMenu, setContextMenu] = useState({
+  visible: false,
+  x: 0,
+  y: 0,
+  inventory: null,
+});
+
 
   // ---------------- Inventory States ----------------
   const [modalInventory, setModalInventory] = useState({
@@ -233,72 +240,93 @@ const Dashboard = () => {
         </Col>
       </Row>
 
-      {/* Inventories Table */}
-      <Row>
+            {/* Inventories Table */}
+            <Row>
         {inventories.length === 0 ? (
           <p>No inventories found.</p>
         ) : (
-          <Table striped bordered hover responsive>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Description</th>
-                <th>Created At</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inventories.map((inv) => (
-                <tr key={inv._id}>
-                  <td>{inv.title}</td>
-                  <td>{inv.category}</td>
-                  <td>{inv.description}</td>
-                  <td>{new Date(inv.createdAt).toLocaleDateString()}</td>
-                  <td>
-                    <Button
-                      variant="success"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleAddItemShow(inv._id)}
-                    >
-                      Add Item
-                    </Button>
-                    <Button
-                      variant="info"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => navigate(`/inventory/${inv._id}`)}
-                    >
-                      View Details
-                    </Button>
-                    {(inv.userId?._id === user.id || user.role === "admin") && (
-                      <>
-                        <Button
-                          variant="warning"
-                          size="sm"
-                          className="me-2"
-                          onClick={() => handleEditShow(inv)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => handleDeleteInventory(inv._id)}
-                        >
-                          Delete
-                        </Button>
-                      </>
-                    )}
-                  </td>
+          <>
+            <Table striped bordered hover responsive>
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th>Created At</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {inventories.map((inv) => (
+                  <tr
+                    key={inv._id}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => navigate(`/inventory/${inv._id}`)} // single click → details
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setContextMenu({
+                        visible: true,
+                        x: e.pageX,
+                        y: e.pageY,
+                        inventory: inv,
+                      });
+                    }}
+                  >
+                    <td>{inv.title}</td>
+                    <td>{inv.category}</td>
+                    <td>{inv.description}</td>
+                    <td>{new Date(inv.createdAt).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+              
+            {/* Custom Right-Click Menu */}
+            {contextMenu.visible && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: contextMenu.y,
+                  left: contextMenu.x,
+                  background: "white",
+                  border: "1px solid #ccc",
+                  borderRadius: "4px",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                  zIndex: 1000,
+                  width: "120px",
+                }}
+                onMouseLeave={() =>
+                  setContextMenu({ ...contextMenu, visible: false })
+                }
+              >
+                <div
+                  style={{ padding: "8px", cursor: "pointer" }}
+                  onClick={() => {
+                    handleEditShow(contextMenu.inventory);
+                    setContextMenu({ ...contextMenu, visible: false });
+                  }}
+                >
+                  Edit
+                </div>
+                <div
+                  style={{ padding: "8px", cursor: "pointer", color: "red" }}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Are you sure you want to delete this inventory?"
+                      )
+                    ) {
+                      handleDeleteInventory(contextMenu.inventory._id);
+                    }
+                    setContextMenu({ ...contextMenu, visible: false });
+                  }}
+                >
+                  Delete
+                </div>
+              </div>
+            )}
+          </>
         )}
       </Row>
-
       {/* ---------------- Create Inventory Modal ---------------- */}
       <Modal show={showCreateModal} onHide={handleCreateModalClose}>
         <Modal.Header closeButton>

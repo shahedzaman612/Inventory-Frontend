@@ -49,7 +49,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
-          <Route path="*" element={<Dashboard />} />
+          <Route path="*" element={<Login />} />
         </Routes>
       </Router>
     </AuthProvider>

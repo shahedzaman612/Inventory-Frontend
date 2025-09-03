@@ -160,7 +160,15 @@ const ProfilePage = () => {
     } catch (err) {
       setEditError(err.response?.data?.message || "Failed to update inventory");
     }
+
   };
+  const [contextMenu, setContextMenu] = useState({
+  visible: false,
+  x: 0,
+  y: 0,
+  inventory: null,
+});
+
 
   return (
     <Container className="py-5">
@@ -195,38 +203,79 @@ const ProfilePage = () => {
         </Col>
       </Row>
 
-      {/* Inventory List */}
-      <h3 className="mb-3">My Inventories</h3>
-      <Row xs={1} md={2} lg={3} className="g-4">
-        {inventories.map((inv) => (
-          <Col key={inv._id}>
-            <Card className="h-100 shadow-sm">
-              <Card.Body className="d-flex flex-column">
-                <Card.Title>{inv.title}</Card.Title>
-                <Card.Text className="flex-grow-1">{inv.description}</Card.Text>
-                <Card.Text className="text-muted mb-2">Category: {inv.category}</Card.Text>
-                <Card.Text className="text-primary mb-3">
-                  String Fields: {inv.customFields?.stringFields.join(", ")} | 
-                  Number Fields: {inv.customFields?.numberFields.join(", ")} | 
-                  Boolean Fields: {inv.customFields?.booleanFields.map(v => v.toString()).join(", ")} | 
-                  Dropdown Fields: {inv.customFields?.dropdownFields.join(", ")}
-                </Card.Text>
-                <div className="d-flex justify-content-between mt-auto">
-                  <Button variant="primary" size="sm" onClick={() => navigate(`/inventory/${inv._id}`)}>
-                    View
-                  </Button>
-                  <Button variant="warning" size="sm" onClick={() => handleEditShow(inv)}>
-                    Edit
-                  </Button>
-                  <Button variant="danger" size="sm" onClick={() => handleDelete(inv._id)}>
-                    Delete
-                  </Button>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+     {/* Inventory List */}
+    <h3 className="mb-3">My Inventories</h3>
+    <Row xs={1} md={2} lg={3} className="g-4">
+      {inventories.map((inv) => (
+        <Col key={inv._id}>
+          <Card
+            className="h-100 shadow-sm"
+            style={{ cursor: "pointer", position: "relative" }}
+            onClick={() => navigate(`/inventory/${inv._id}`)} // Single-click → details
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setContextMenu({
+                visible: true,
+                x: e.pageX,
+                y: e.pageY,
+                inventory: inv,
+              });
+            }}
+          >
+            <Card.Body className="d-flex flex-column">
+              <Card.Title>{inv.title}</Card.Title>
+              <Card.Text className="flex-grow-1">{inv.description}</Card.Text>
+              <Card.Text className="text-muted mb-2">Category: {inv.category}</Card.Text>
+              <Card.Text className="text-primary mb-3">
+                String Fields: {inv.customFields?.stringFields.join(", ")} | 
+                Number Fields: {inv.customFields?.numberFields.join(", ")} | 
+                Boolean Fields: {inv.customFields?.booleanFields.map(v => v.toString()).join(", ")} | 
+                Dropdown Fields: {inv.customFields?.dropdownFields.join(", ")}
+              </Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+      ))}
+    
+      {/* Right-click context menu */}
+      {contextMenu.visible && (
+        <div
+          style={{
+            position: "absolute",
+            top: contextMenu.y,
+            left: contextMenu.x,
+            background: "white",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+            zIndex: 1000,
+            width: "120px",
+          }}
+        >
+          <div
+            style={{ padding: "8px", cursor: "pointer" }}
+            onClick={() => {
+              handleEditShow(contextMenu.inventory); // Edit
+              setContextMenu({ ...contextMenu, visible: false });
+            }}
+          >
+            Edit
+          </div>
+          <div
+            style={{ padding: "8px", cursor: "pointer", color: "red" }}
+            onClick={() => {
+              if (window.confirm("Are you sure you want to delete this inventory?")) {
+                handleDelete(contextMenu.inventory._id);
+              }
+              setContextMenu({ ...contextMenu, visible: false });
+            }}
+          >
+            Delete
+          </div>
+        </div>
+      )}
+    </Row>
+
 
       {/* ----- Create Modal ----- */}
       <Modal show={showCreateModal} onHide={handleCreateModalClose}>
