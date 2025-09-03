@@ -15,7 +15,7 @@ import api from "../services/api";
 import { AuthContext } from "../contexts/AuthContext";
 
 const Dashboard = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user} = useContext(AuthContext);
   const [inventories, setInventories] = useState([]);
   const [stats, setStats] = useState({ inventories: 0, items: 0 });
   const [loading, setLoading] = useState(true);
@@ -176,11 +176,6 @@ const Dashboard = () => {
       <Row className="mb-3">
         <Col>
           <h2>Welcome, {user.username}</h2>
-        </Col>
-        <Col className="text-end">
-          <Button variant="secondary" onClick={logout}>
-            Logout
-          </Button>
         </Col>
       </Row>
 

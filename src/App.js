@@ -1,3 +1,4 @@
+// App.js
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -11,7 +12,7 @@ import ResetPassword from "./components/ResetPassword";
 import ForgotPassword from "./components/ForgotPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ProfilePage from "./components/ProfilePage";
-
+import SearchBar from "./components/SearchBar"; // ✅ new import
 
 function App() {
   return (
@@ -31,11 +32,14 @@ function App() {
             }
           />
 
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          } />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/inventory/:inventoryId"
@@ -45,6 +49,17 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* ✅ Full search results page */}
+          <Route
+            path="/search"
+            element={
+              <ProtectedRoute>
+                <SearchBar />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
