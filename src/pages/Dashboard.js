@@ -24,11 +24,11 @@ const Dashboard = () => {
   // ---------------- Modals ----------------
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showAddItemModal, setShowAddItemModal] = useState(false);
+  
 
   const [createError, setCreateError] = useState("");
   const [editError, setEditError] = useState("");
-  const [addItemError, setAddItemError] = useState("");
+ 
   const [contextMenu, setContextMenu] = useState({
   visible: false,
   x: 0,
@@ -58,9 +58,6 @@ const Dashboard = () => {
   const [tempBoolean, setTempBoolean] = useState("");
   const [tempDropdown, setTempDropdown] = useState("");
 
-  // ---------------- Add Item States ----------------
-  const [addItemInventoryId, setAddItemInventoryId] = useState("");
-  const [newItem, setNewItem] = useState({ name: "", quantity: 0, itemId: "" });
 
   // ---------------- Fetch inventories & stats ----------------
   useEffect(() => {
@@ -303,6 +300,7 @@ const Dashboard = () => {
           </>
         )}
       </Row>
+
       {/* ---------------- Create Inventory Modal ---------------- */}
       <Modal show={showCreateModal} onHide={handleCreateModalClose}>
         <Modal.Header closeButton>
@@ -611,42 +609,6 @@ const Dashboard = () => {
           </Button>
           <Button variant="primary" onClick={handleEditSubmit}>
             Save Changes
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* ---------------- Add Item Modal ---------------- */}
-      <Modal show={showAddItemModal} onHide={handleAddItemClose}>
-        <Modal.Header closeButton>
-          <Modal.Title>Add Item</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {addItemError && <Alert variant="danger">{addItemError}</Alert>}
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Item Name</Form.Label>
-              <Form.Control
-                type="text"
-                value={newItem.name}
-                onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Quantity</Form.Label>
-              <Form.Control
-                type="number"
-                value={newItem.quantity}
-                onChange={(e) => setNewItem({ ...newItem, quantity: Number(e.target.value) })}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleAddItemClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleAddItemSubmit}>
-            Add Item
           </Button>
         </Modal.Footer>
       </Modal>
