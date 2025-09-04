@@ -3,6 +3,8 @@ import { Form, Button, Container, Alert } from "react-bootstrap";
 import { AuthContext } from "../contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 
+//const API_URL = process.env.REACT_APP_API_URL;
+
 const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -53,18 +55,29 @@ const Login = () => {
           />
         </Form.Group>
 
-        <Button variant="primary" type="submit" className="w-100 mb-2">
+        <Button variant="primary" type="submit" className="w-100 mb-3">
           Login
         </Button>
-
-        <div className="text-center mt-2">
-          <Link to="/forgot-password">Forgot Password?</Link>
-        </div>
-
-        <p className="mt-3 text-center">
-          Don't have an account? <Link to="/register">Register</Link>
-        </p>
       </Form>
+
+      <div className="text-center mb-3">OR</div>
+
+      <div className="d-grid gap-2 mb-3">
+       <a href={`${process.env.REACT_APP_API_URL}/api/auth/google`} className="btn btn-outline-danger">
+        Login/Register with Google
+        </a>
+        <a href={`${process.env.REACT_APP_API_URL}/api/auth/github`} className="btn btn-outline-dark">
+        Login/Register with GitHub
+        </a>
+      </div>
+
+      <div className="text-center mb-2">
+        <Link to="/forgot-password">Forgot Password?</Link>
+      </div>
+
+      <p className="mt-3 text-center">
+        Don't have an account? <Link to="/register">Register</Link>
+      </p>
     </Container>
   );
 };

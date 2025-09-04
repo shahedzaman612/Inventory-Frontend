@@ -35,8 +35,8 @@ const Register = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <h2>Register</h2>
+    <div className="container mt-5" style={{ maxWidth: "500px" }}>
+      <h2 className="mb-4">Register</h2>
 
       {error && <div className="alert alert-danger">{error}</div>}
       {success && (
@@ -83,13 +83,35 @@ const Register = () => {
           />
         </div>
 
-        <button type="submit" className="btn btn-primary" disabled={!!success}>
+        <button
+          type="submit"
+          className="btn btn-primary w-100 mb-3"
+          disabled={!!success}
+        >
           Register
         </button>
-        <a href="/login" className="btn btn-link">
-          Already have an account? Login
-        </a>
       </form>
+
+      <div className="text-center mb-3">OR</div>
+
+      <div className="d-grid gap-2 mb-3">
+        <a
+          href={`${API_URL}/api/auth/google`}
+          className="btn btn-outline-danger"
+        >
+          Register with Google
+        </a>
+        <a
+          href={`${API_URL}/api/auth/github`}
+          className="btn btn-outline-dark"
+        >
+          Register with GitHub
+        </a>
+      </div>
+
+      <div className="text-center">
+        <a href="/login">Already have an account? Login</a>
+      </div>
     </div>
   );
 };

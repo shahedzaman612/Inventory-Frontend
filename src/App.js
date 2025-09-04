@@ -12,7 +12,8 @@ import ResetPassword from "./components/ResetPassword";
 import ForgotPassword from "./components/ForgotPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ProfilePage from "./components/ProfilePage";
-import SearchBar from "./components/SearchBar"; // ✅ new import
+import SearchBar from "./components/SearchBar"; 
+import OAuthSuccess from "./components/OAuthSuccess";
 
 function App() {
   return (
@@ -50,7 +51,7 @@ function App() {
             }
           />
 
-          {/* ✅ Full search results page */}
+       
           <Route
             path="/search"
             element={
@@ -63,7 +64,7 @@ function App() {
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
-
+          <Route path="/oauth-success" element={<OAuthSuccess />} />
           <Route path="*" element={<Login />} />
         </Routes>
       </Router>
